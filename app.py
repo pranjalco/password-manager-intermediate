@@ -40,11 +40,18 @@ Python | Tkinter | JSON | File Handling | Clipboard Handling | Error Handling
 
 FONT_NAME = "Courier"
 
+def clean_up():
+    website_entry.focus()
+    website_entry.delete(0, "end")
+    password_entry.delete(0, "end")
+    email_username_entry.delete(0, "end")
+    email_username_entry.insert(0, "@gmail.com")
 
-# ---------------------------- PASSWORD GENERATOR ------------------------------- #
+# ------------------------------------------ PASSWORD GENERATOR ------------------------------------------ #
 
 
 def generate_password():
+    """This function generates strong password"""
     password_entry.delete(0, END)
 
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
@@ -59,24 +66,17 @@ def generate_password():
     password_list += [choice(numbers) for _ in range(randint(2, 4))]
     shuffle(password_list)
 
-    # Method 2 for creating random password list using for loop
-    # password_letters = [choice(letters) for _ in range(randint(8, 10))]
-    # password_symbols = [choice(symbols) for _ in range(randint(2, 4))]
-    # password_numbers = [choice(numbers) for _ in range(randint(2, 4))]
-    # password_list = password_letters + password_symbols + password_numbers
-    # shuffle(password_list)
-
     password = "".join(password_list)
 
     password_entry.insert(0, f"{password}")
     pyperclip.copy(password)
 
 
-# ---------------------------- SAVE PASSWORD ------------------------------- #
+# ------------------------------------------ SAVE PASSWORD ------------------------------------------ #
 
 
 def save():
-    website = website_entry.get()
+    website = website_entry.get().strip().title()
     password = password_entry.get()
     email = email_username_entry.get()
     new_data = {
@@ -89,10 +89,6 @@ def save():
     if len(website) == 0 or len(password) == 0:
         messagebox.showinfo(title="😿 mmm", message="Hi! Please enter all required details in fields.")
     else:
-        # Asking user to cross-check the details
-        # is_ok = messagebox.askokcancel(title="Website", message=f"These are the details entered: "
-        #                                               f"\nEmail: {email} \nPassword: {password} \nIs it ok to save?")
-
         # Saving data to data.json file
         is_ok = True
         if is_ok:
@@ -110,22 +106,19 @@ def save():
                     # Saving the updated data: writing
                     json.dump(data, data_file, indent=4)
             finally:
-                website_entry.focus()
-                website_entry.delete(0, "end")
-                password_entry.delete(0, "end")
+                clean_up()
 
 
-# ----------------------- SEARCH INFORMATION -------------------------- #
+# ------------------------------------------ SEARCH INFORMATION ------------------------------------------ #
 
 def search_info():
-    website = website_entry.get()
+    website = website_entry.get().strip().title()
 
     if len(website) != 0:
         try:
             with open("data.json") as data_file:
                 data = json.load(data_file)
-                # print(data)
-                # print(type(data))
+
         except FileNotFoundError:
             messagebox.showerror(title="Error", message="No Data File Found")
         else:
@@ -142,8 +135,38 @@ def search_info():
     else:
         messagebox.showinfo(title="Empty Website Field", message="Please enter something in Website field.")
 
+# ------------------------------------------ DELETE INFORMATION ------------------------------------------ #
 
-# ---------------------------- UI SETUP ------------------------------- #
+def delete_info():
+    website = website_entry.get().strip().title()
+
+    if len(website) != 0:
+        try:
+            with open("data.json") as data_file:
+                data = json.load(data_file)
+        except FileNotFoundError:
+            messagebox.showerror(title="Error", message="No data file found.")
+        else:
+            data_found = False
+            if website in data:
+                data_found = True
+                confirmation = messagebox.askyesno(
+                    title="Confirm delete", 
+                    message="Are you sure you want to delete this entry?"
+                    )
+                if confirmation:
+                    data.pop(website, None)
+                    with open("data.json", "w") as data_file:
+                        json.dump(data, data_file, indent=4)
+
+                    clean_up()
+            if not data_found:
+                messagebox.showinfo(title=website, message=f"No data found for '{website}'.")
+    else:
+        messagebox.showinfo(title="Empty Website Field", message="Please enter website name in website field.")
+
+
+# ------------------------------------------ UI SETUP ------------------------------------------ #
 
 # Creating UI using tkinter module
 window = Tk()
@@ -186,5 +209,8 @@ add_button.grid(column=1, row=4, columnspan=2)
 
 search_button = Button(text="Search", width=15, command=search_info)
 search_button.grid(column=2, row=1)
+
+delete_button = Button(text="Delete", width=15, command=delete_info)
+delete_button.grid(column=2, row=2)
 
 window.mainloop()
